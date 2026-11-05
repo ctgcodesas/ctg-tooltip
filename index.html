@@ -80,6 +80,21 @@
         </ctg-tooltip>
       </div>
 
+      <div class="placements">
+        <ctg-tooltip id="t-slow" show-delay="500">
+          <button>show-delay 500</button>
+          <span slot="content">Waited half a second</span>
+        </ctg-tooltip>
+        <ctg-tooltip id="t-linger" hide-delay="1000">
+          <button>hide-delay 1000</button>
+          <span slot="content">I stay a second after you leave</span>
+        </ctg-tooltip>
+        <ctg-tooltip id="t-far" offset="24">
+          <button>offset 24</button>
+          <span slot="content">Further from the trigger</span>
+        </ctg-tooltip>
+      </div>
+
       <p class="clipped">
         Inside overflow: hidden
         <ctg-tooltip>

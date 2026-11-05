@@ -9,12 +9,12 @@ import {
   type Placement,
 } from '@floating-ui/dom'
 
-// Small grace period so the pointer can travel from the trigger to the
-// tooltip without it closing in between.
-const HIDE_DELAY = 100
-
-// Gap between the trigger and the tooltip, in px.
-const OFFSET = 8
+// Defaults for the attributes of the same name. The hide delay gives the
+// pointer time to travel from the trigger to the tooltip without it
+// closing in between.
+const DEFAULT_SHOW_DELAY = 0
+const DEFAULT_HIDE_DELAY = 100
+const DEFAULT_OFFSET = 8
 
 // Minimum distance kept from the viewport edges, in px.
 const VIEWPORT_PADDING = 8
@@ -28,11 +28,20 @@ const OPPOSITE_SIDE = {
 
 let nextId = 0
 
+// Attributes can hold anything; negative or non-numeric values fall
+// back to the default instead of breaking the timers or the layout.
+function nonNegative(value: number, fallback: number) {
+  return Number.isFinite(value) && value >= 0 ? value : fallback
+}
+
 export class CtgTooltip extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
     placement: { type: String, reflect: true },
     trigger: { type: String },
+    showDelay: { type: Number, attribute: 'show-delay' },
+    hideDelay: { type: Number, attribute: 'hide-delay' },
+    offset: { type: Number },
   }
 
   static styles = css`
@@ -107,7 +116,14 @@ export class CtgTooltip extends LitElement {
    * `click` or `manual`. `manual` disables all of them.
    */
   declare trigger: string
+  /** Milliseconds to wait before showing on hover. */
+  declare showDelay: number
+  /** Milliseconds to wait before hiding when the pointer leaves. */
+  declare hideDelay: number
+  /** Distance between the trigger and the tooltip, in px. */
+  declare offset: number
 
+  private showTimer?: ReturnType<typeof setTimeout>
   private hideTimer?: ReturnType<typeof setTimeout>
   private stopAutoUpdate?: () => void
 
@@ -122,6 +138,9 @@ export class CtgTooltip extends LitElement {
     this.open = false
     this.placement = 'top'
     this.trigger = 'hover focus'
+    this.showDelay = DEFAULT_SHOW_DELAY
+    this.hideDelay = DEFAULT_HIDE_DELAY
+    this.offset = DEFAULT_OFFSET
   }
 
   connectedCallback() {
@@ -143,19 +162,24 @@ export class CtgTooltip extends LitElement {
     this.removeEventListener('focusout', this.onFocusout)
     this.removeEventListener('click', this.onClick)
     this.removeGlobalListeners()
-    clearTimeout(this.hideTimer)
+    this.clearTimers()
     this.stopPositioning()
   }
 
   show = () => {
-    clearTimeout(this.hideTimer)
+    this.clearTimers()
     this.open = true
   }
 
   hide = () => {
-    clearTimeout(this.hideTimer)
+    this.clearTimers()
     this.pinned = false
     this.open = false
+  }
+
+  private clearTimers() {
+    clearTimeout(this.showTimer)
+    clearTimeout(this.hideTimer)
   }
 
   private hasTrigger(name: string) {
@@ -163,9 +187,19 @@ export class CtgTooltip extends LitElement {
     return !triggers.includes('manual') && triggers.includes(name)
   }
 
+  // Delays only apply to hover. Focus and click respond right away, since
+  // a keyboard or touch user asked for the tooltip on purpose.
+  private scheduleShow() {
+    this.clearTimers()
+    const delay = nonNegative(this.showDelay, DEFAULT_SHOW_DELAY)
+    if (delay === 0) this.show()
+    else this.showTimer = setTimeout(this.show, delay)
+  }
+
   private scheduleHide() {
-    clearTimeout(this.hideTimer)
-    this.hideTimer = setTimeout(this.hide, HIDE_DELAY)
+    this.clearTimers()
+    const delay = nonNegative(this.hideDelay, DEFAULT_HIDE_DELAY)
+    this.hideTimer = setTimeout(this.hide, delay)
   }
 
   private onPointerdown = (event: PointerEvent) => {
@@ -176,7 +210,7 @@ export class CtgTooltip extends LitElement {
   // only the click handler decides what a tap does.
   private onPointerenter = (event: PointerEvent) => {
     if (event.pointerType === 'touch' || !this.hasTrigger('hover')) return
-    this.show()
+    this.scheduleShow()
   }
 
   private onPointerleave = (event: PointerEvent) => {
@@ -253,7 +287,7 @@ export class CtgTooltip extends LitElement {
         this.removeGlobalListeners()
         this.stopPositioning()
       }
-    } else if (changed.has('placement') && this.open) {
+    } else if ((changed.has('placement') || changed.has('offset')) && this.open) {
       this.updatePosition()
     }
   }
@@ -291,7 +325,7 @@ export class CtgTooltip extends LitElement {
         strategy: 'fixed',
         placement: this.placement,
         middleware: [
-          offset(OFFSET),
+          offset(nonNegative(this.offset, DEFAULT_OFFSET)),
           flip({ padding: VIEWPORT_PADDING }),
           shift({ padding: VIEWPORT_PADDING }),
           arrow({ element: arrowEl, padding: 6 }),
