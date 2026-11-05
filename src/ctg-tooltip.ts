@@ -277,14 +277,15 @@ export class CtgTooltip extends LitElement {
     tooltip.style.top = `${y}px`
 
     // The arrow follows the trigger even when shift() moved the tooltip,
-    // and sticks out on the side facing the trigger.
+    // and sticks out by half its size on the side facing the trigger.
+    // The size is measured so it works with any --ctg-tooltip-arrow-size.
     const arrowData = middlewareData.arrow
     Object.assign(arrowEl.style, {
       left: arrowData?.x != null ? `${arrowData.x}px` : '',
       top: arrowData?.y != null ? `${arrowData.y}px` : '',
       right: '',
       bottom: '',
-      [OPPOSITE_SIDE[side]]: '-0.25rem',
+      [OPPOSITE_SIDE[side]]: `${-arrowEl.offsetWidth / 2}px`,
     })
   }
 

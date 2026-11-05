@@ -23,6 +23,56 @@
         position: fixed;
       }
 
+      /* Themed example: same look as the original footer tooltip, built
+         only with custom properties and styles for the slotted content. */
+      .footer {
+        margin-top: 2rem;
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        background: #0c2233;
+        color: #94a3b8;
+        font-size: 0.875rem;
+      }
+
+      .footer a {
+        color: #cbd5e1;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .footer ctg-tooltip {
+        --ctg-tooltip-background: #f6f1e7;
+        --ctg-tooltip-color: #0c2233;
+        --ctg-tooltip-width: 14rem;
+        --ctg-tooltip-padding: 1rem;
+        --ctg-tooltip-radius: 0.75rem;
+        --ctg-tooltip-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+        --ctg-tooltip-text-align: center;
+        --ctg-tooltip-arrow-size: 0.75rem;
+        --ctg-tooltip-arrow-radius: 2px;
+        --ctg-tooltip-duration: 200ms;
+      }
+
+      .footer svg {
+        display: block;
+        width: 3rem;
+        height: 3rem;
+        margin: 0 auto;
+      }
+
+      .footer strong {
+        display: block;
+        margin-top: 0.5rem;
+      }
+
+      .footer small {
+        display: block;
+        margin-top: 0.25rem;
+        opacity: 0.7;
+        font-size: 0.75rem;
+        line-height: 1.375;
+      }
+
       .clipped {
         overflow: hidden;
         padding: 0.5rem;
@@ -102,6 +152,34 @@
           <span slot="content">Not clipped by the parent</span>
         </ctg-tooltip>
       </p>
+
+      <footer class="footer">
+        Website by
+        <ctg-tooltip id="t-themed" trigger="hover focus click">
+          <a href="https://ctgcode.com" target="_blank" rel="noopener">CTG Code</a>
+          <div slot="content">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <g stroke="#0C2233" stroke-width="9" stroke-linecap="square" fill="none">
+                <path d="M46 34 L36 42 L36 92 L26 100 L36 108 L36 158 L46 166" />
+                <path d="M154 34 L164 42 L164 92 L174 100 L164 108 L164 158 L154 166" />
+              </g>
+              <g fill="#F4A24C">
+                <path d="M100 50 L107 66 L93 66 Z" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(45 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(90 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(135 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(180 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(225 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(270 100 100)" />
+                <path d="M100 50 L107 66 L93 66 Z" transform="rotate(315 100 100)" />
+              </g>
+              <circle cx="100" cy="100" r="22" fill="none" stroke="#F4A24C" stroke-width="8" />
+            </svg>
+            <strong>Get a quote</strong>
+            <small>Websites and custom software</small>
+          </div>
+        </ctg-tooltip>
+      </footer>
     </main>
 
     <!-- Near the edges: should flip and shift to stay on screen. -->
