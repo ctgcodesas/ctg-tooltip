@@ -1,4 +1,4 @@
-import { LitElement, css, html } from 'lit'
+import { LitElement, html } from 'lit'
 import {
   arrow,
   autoUpdate,
@@ -8,6 +8,7 @@ import {
   shift,
   type Placement,
 } from '@floating-ui/dom'
+import { styles } from './ctg-tooltip.styles'
 
 // Defaults for the attributes of the same name. The hide delay gives the
 // pointer time to travel from the trigger to the tooltip without it
@@ -44,70 +45,7 @@ export class CtgTooltip extends LitElement {
     offset: { type: Number },
   }
 
-  static styles = css`
-    :host {
-      display: inline-block;
-    }
-
-    .tooltip {
-      /* Fixed so it isn't clipped by ancestors with overflow: hidden. */
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 1000;
-      width: max-content;
-      max-width: 16rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-      background: #1f2937;
-      color: #fff;
-      font-size: 0.875rem;
-      line-height: 1.4;
-      opacity: 0;
-      visibility: hidden;
-      transform: translate(var(--slide-x, 0), var(--slide-y, 0));
-      transition:
-        opacity 150ms ease,
-        transform 150ms ease,
-        visibility 150ms;
-    }
-
-    /* While hidden, the tooltip sits slightly towards the trigger so it
-       slides out from it when shown. */
-    .tooltip[data-side='top'] {
-      --slide-y: 0.25rem;
-    }
-    .tooltip[data-side='bottom'] {
-      --slide-y: -0.25rem;
-    }
-    .tooltip[data-side='left'] {
-      --slide-x: 0.25rem;
-    }
-    .tooltip[data-side='right'] {
-      --slide-x: -0.25rem;
-    }
-
-    :host([open]) .tooltip {
-      --slide-x: 0;
-      --slide-y: 0;
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .arrow {
-      position: absolute;
-      width: 0.5rem;
-      height: 0.5rem;
-      background: inherit;
-      transform: rotate(45deg);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .tooltip {
-        transition: none;
-      }
-    }
-  `
+  static styles = styles
 
   declare open: boolean
   declare placement: Placement
@@ -339,14 +277,15 @@ export class CtgTooltip extends LitElement {
     tooltip.style.top = `${y}px`
 
     // The arrow follows the trigger even when shift() moved the tooltip,
-    // and sticks out on the side facing the trigger.
+    // and sticks out by half its size on the side facing the trigger.
+    // The size is measured so it works with any --ctg-tooltip-arrow-size.
     const arrowData = middlewareData.arrow
     Object.assign(arrowEl.style, {
       left: arrowData?.x != null ? `${arrowData.x}px` : '',
       top: arrowData?.y != null ? `${arrowData.y}px` : '',
       right: '',
       bottom: '',
-      [OPPOSITE_SIDE[side]]: '-0.25rem',
+      [OPPOSITE_SIDE[side]]: `${-arrowEl.offsetWidth / 2}px`,
     })
   }
 
