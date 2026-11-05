@@ -11,3 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Show the tooltip on hover and keyboard focus, and hide it with `Escape`.
 - Link the trigger to the tooltip text with `aria-describedby`.
+- `placement` attribute to choose the preferred side of the tooltip.
+- The tooltip flips and shifts to stay inside the viewport.
+- Arrow pointing at the trigger.

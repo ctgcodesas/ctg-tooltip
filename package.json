@@ -41,6 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
     "lit": "^3.3.0"
   },
   "devDependencies": {
