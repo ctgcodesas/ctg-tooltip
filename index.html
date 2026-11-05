@@ -5,11 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ctg-tooltip</title>
     <script type="module" src="/src/index.ts"></script>
+    <style>
+      body {
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        margin: 0;
+        font-family: system-ui, sans-serif;
+      }
+    </style>
   </head>
   <body>
-    <ctg-tooltip>
-      <a href="https://ctgcode.com">CTG Code</a>
-      <span slot="content">Get a quote</span>
-    </ctg-tooltip>
+    <p>
+      Made by
+      <ctg-tooltip>
+        <a href="https://ctgcode.com">CTG Code</a>
+        <span slot="content">Get a quote</span>
+      </ctg-tooltip>
+    </p>
   </body>
 </html>
