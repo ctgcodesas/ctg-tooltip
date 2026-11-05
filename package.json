@@ -1,10 +1,14 @@
 {
-  "name": "ctg-tooltip",
+  "name": "@ctgcode/tooltip",
   "version": "0.0.0",
   "description": "Tooltip Web Component that works in React, Vue, Angular, Astro or plain HTML.",
   "type": "module",
   "license": "MIT",
   "author": "CTG CODE SAS",
+  "homepage": "https://github.com/ctgcodesas/ctg-tooltip#readme",
+  "bugs": {
+    "url": "https://github.com/ctgcodesas/ctg-tooltip/issues"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ctgcodesas/ctg-tooltip.git"
@@ -28,6 +32,9 @@
     "dist"
   ],
   "sideEffects": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc -p tsconfig.build.json",

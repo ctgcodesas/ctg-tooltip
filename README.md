@@ -7,16 +7,16 @@ A tooltip built as a Web Component, so it works the same in React, Vue, Angular,
 ## Installation
 
 ```bash
-npm install ctg-tooltip
+npm install @ctgcode/tooltip
 # or
-bun add ctg-tooltip
+bun add @ctgcode/tooltip
 ```
 
 ## Usage
 
 ```html
 <script type="module">
-  import 'ctg-tooltip'
+  import '@ctgcode/tooltip'
 </script>
 
 <ctg-tooltip>
