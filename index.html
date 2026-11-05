@@ -59,6 +59,27 @@
         </ctg-tooltip>
       </div>
 
+      <div class="placements">
+        <ctg-tooltip id="t-click" trigger="click">
+          <button>click only</button>
+          <span slot="content">Click again or outside to close</span>
+        </ctg-tooltip>
+        <ctg-tooltip id="t-all" trigger="hover focus click">
+          <button>hover + click</button>
+          <span slot="content">Click to pin me</span>
+        </ctg-tooltip>
+        <ctg-tooltip id="t-link" trigger="hover focus click">
+          <a href="https://ctgcode.com">link + click</a>
+          <span slot="content">On touch: first tap shows, second navigates</span>
+        </ctg-tooltip>
+        <ctg-tooltip id="t-manual" trigger="manual">
+          <button onclick="this.parentElement.open = !this.parentElement.open">
+            manual
+          </button>
+          <span slot="content">Toggled from code</span>
+        </ctg-tooltip>
+      </div>
+
       <p class="clipped">
         Inside overflow: hidden
         <ctg-tooltip>

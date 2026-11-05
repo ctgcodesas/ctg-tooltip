@@ -32,6 +32,7 @@ export class CtgTooltip extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
     placement: { type: String, reflect: true },
+    trigger: { type: String },
   }
 
   static styles = css`
@@ -101,31 +102,47 @@ export class CtgTooltip extends LitElement {
 
   declare open: boolean
   declare placement: Placement
+  /**
+   * Space-separated list of what opens the tooltip: `hover`, `focus`,
+   * `click` or `manual`. `manual` disables all of them.
+   */
+  declare trigger: string
 
   private hideTimer?: ReturnType<typeof setTimeout>
   private stopAutoUpdate?: () => void
+
+  // Set when the tooltip was opened (or kept open) by a click. A pinned
+  // tooltip ignores pointer leave and only closes on click, outside
+  // click or Escape.
+  private pinned = false
+  private lastPointerType = ''
 
   constructor() {
     super()
     this.open = false
     this.placement = 'top'
+    this.trigger = 'hover focus'
   }
 
   connectedCallback() {
     super.connectedCallback()
-    this.addEventListener('pointerenter', this.show)
-    this.addEventListener('pointerleave', this.scheduleHide)
-    this.addEventListener('focusin', this.show)
-    this.addEventListener('focusout', this.hide)
+    this.addEventListener('pointerdown', this.onPointerdown)
+    this.addEventListener('pointerenter', this.onPointerenter)
+    this.addEventListener('pointerleave', this.onPointerleave)
+    this.addEventListener('focusin', this.onFocusin)
+    this.addEventListener('focusout', this.onFocusout)
+    this.addEventListener('click', this.onClick)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('pointerenter', this.show)
-    this.removeEventListener('pointerleave', this.scheduleHide)
-    this.removeEventListener('focusin', this.show)
-    this.removeEventListener('focusout', this.hide)
-    document.removeEventListener('keydown', this.onKeydown)
+    this.removeEventListener('pointerdown', this.onPointerdown)
+    this.removeEventListener('pointerenter', this.onPointerenter)
+    this.removeEventListener('pointerleave', this.onPointerleave)
+    this.removeEventListener('focusin', this.onFocusin)
+    this.removeEventListener('focusout', this.onFocusout)
+    this.removeEventListener('click', this.onClick)
+    this.removeGlobalListeners()
     clearTimeout(this.hideTimer)
     this.stopPositioning()
   }
@@ -137,26 +154,103 @@ export class CtgTooltip extends LitElement {
 
   hide = () => {
     clearTimeout(this.hideTimer)
+    this.pinned = false
     this.open = false
   }
 
-  private scheduleHide = () => {
+  private hasTrigger(name: string) {
+    const triggers = this.trigger.split(/\s+/)
+    return !triggers.includes('manual') && triggers.includes(name)
+  }
+
+  private scheduleHide() {
     clearTimeout(this.hideTimer)
     this.hideTimer = setTimeout(this.hide, HIDE_DELAY)
+  }
+
+  private onPointerdown = (event: PointerEvent) => {
+    this.lastPointerType = event.pointerType
+  }
+
+  // Touch screens fire pointerenter on tap. That fake hover is ignored so
+  // only the click handler decides what a tap does.
+  private onPointerenter = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' || !this.hasTrigger('hover')) return
+    this.show()
+  }
+
+  private onPointerleave = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' || !this.hasTrigger('hover')) return
+    if (!this.pinned) this.scheduleHide()
+  }
+
+  private onFocusin = () => {
+    if (this.hasTrigger('focus')) this.show()
+  }
+
+  private onFocusout = (event: FocusEvent) => {
+    if (!this.hasTrigger('focus')) return
+
+    const next = event.relatedTarget as Node | null
+    if (next && this.contains(next)) return
+
+    // Clicking a non-focusable spot moves focus to nothing. A pinned
+    // tooltip stays open then; the outside click handler closes it.
+    if (this.pinned && !next) return
+    this.hide()
+  }
+
+  private onClick = (event: MouseEvent) => {
+    if (!this.hasTrigger('click')) return
+
+    // Clicks inside the tooltip itself don't toggle it.
+    const tooltip = this.renderRoot.querySelector('.tooltip')
+    if (tooltip && event.composedPath().includes(tooltip)) return
+
+    if (this.pinned) {
+      this.hide()
+      return
+    }
+
+    // On touch screens the first tap on a link shows the tooltip instead
+    // of navigating, otherwise it would never be seen. The second tap
+    // follows the link.
+    const link = event
+      .composedPath()
+      .find((el): el is HTMLAnchorElement => el instanceof HTMLAnchorElement)
+    if (this.lastPointerType === 'touch' && link?.href) {
+      event.preventDefault()
+    }
+
+    // An open tooltip (from hover or focus) gets pinned instead of
+    // closed, so clicking the trigger never makes it flicker.
+    this.pinned = true
+    this.show()
+  }
+
+  private onDocumentPointerdown = (event: PointerEvent) => {
+    if (!this.hasTrigger('click')) return
+    if (!event.composedPath().includes(this)) this.hide()
   }
 
   private onKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') this.hide()
   }
 
+  private removeGlobalListeners() {
+    document.removeEventListener('keydown', this.onKeydown)
+    document.removeEventListener('pointerdown', this.onDocumentPointerdown)
+  }
+
   protected updated(changed: Map<string, unknown>) {
     if (changed.has('open')) {
-      // Only listen for Escape and track the position while visible.
+      // Global listeners and position tracking only run while visible.
       if (this.open) {
         document.addEventListener('keydown', this.onKeydown)
+        document.addEventListener('pointerdown', this.onDocumentPointerdown)
         this.startPositioning()
       } else {
-        document.removeEventListener('keydown', this.onKeydown)
+        this.removeGlobalListeners()
         this.stopPositioning()
       }
     } else if (changed.has('placement') && this.open) {
