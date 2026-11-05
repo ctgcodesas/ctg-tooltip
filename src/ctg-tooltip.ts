@@ -9,12 +9,12 @@ import {
   type Placement,
 } from '@floating-ui/dom'
 
-// Small grace period so the pointer can travel from the trigger to the
-// tooltip without it closing in between.
-const HIDE_DELAY = 100
-
-// Gap between the trigger and the tooltip, in px.
-const OFFSET = 8
+// Defaults for the attributes of the same name. The hide delay gives the
+// pointer time to travel from the trigger to the tooltip without it
+// closing in between.
+const DEFAULT_SHOW_DELAY = 0
+const DEFAULT_HIDE_DELAY = 100
+const DEFAULT_OFFSET = 8
 
 // Minimum distance kept from the viewport edges, in px.
 const VIEWPORT_PADDING = 8
@@ -28,10 +28,20 @@ const OPPOSITE_SIDE = {
 
 let nextId = 0
 
+// Attributes can hold anything; negative or non-numeric values fall
+// back to the default instead of breaking the timers or the layout.
+function nonNegative(value: number, fallback: number) {
+  return Number.isFinite(value) && value >= 0 ? value : fallback
+}
+
 export class CtgTooltip extends LitElement {
   static properties = {
     open: { type: Boolean, reflect: true },
     placement: { type: String, reflect: true },
+    trigger: { type: String },
+    showDelay: { type: Number, attribute: 'show-delay' },
+    hideDelay: { type: Number, attribute: 'hide-delay' },
+    offset: { type: Number },
   }
 
   static styles = css`
@@ -101,65 +111,183 @@ export class CtgTooltip extends LitElement {
 
   declare open: boolean
   declare placement: Placement
+  /**
+   * Space-separated list of what opens the tooltip: `hover`, `focus`,
+   * `click` or `manual`. `manual` disables all of them.
+   */
+  declare trigger: string
+  /** Milliseconds to wait before showing on hover. */
+  declare showDelay: number
+  /** Milliseconds to wait before hiding when the pointer leaves. */
+  declare hideDelay: number
+  /** Distance between the trigger and the tooltip, in px. */
+  declare offset: number
 
+  private showTimer?: ReturnType<typeof setTimeout>
   private hideTimer?: ReturnType<typeof setTimeout>
   private stopAutoUpdate?: () => void
+
+  // Set when the tooltip was opened (or kept open) by a click. A pinned
+  // tooltip ignores pointer leave and only closes on click, outside
+  // click or Escape.
+  private pinned = false
+  private lastPointerType = ''
 
   constructor() {
     super()
     this.open = false
     this.placement = 'top'
+    this.trigger = 'hover focus'
+    this.showDelay = DEFAULT_SHOW_DELAY
+    this.hideDelay = DEFAULT_HIDE_DELAY
+    this.offset = DEFAULT_OFFSET
   }
 
   connectedCallback() {
     super.connectedCallback()
-    this.addEventListener('pointerenter', this.show)
-    this.addEventListener('pointerleave', this.scheduleHide)
-    this.addEventListener('focusin', this.show)
-    this.addEventListener('focusout', this.hide)
+    this.addEventListener('pointerdown', this.onPointerdown)
+    this.addEventListener('pointerenter', this.onPointerenter)
+    this.addEventListener('pointerleave', this.onPointerleave)
+    this.addEventListener('focusin', this.onFocusin)
+    this.addEventListener('focusout', this.onFocusout)
+    this.addEventListener('click', this.onClick)
   }
 
   disconnectedCallback() {
     super.disconnectedCallback()
-    this.removeEventListener('pointerenter', this.show)
-    this.removeEventListener('pointerleave', this.scheduleHide)
-    this.removeEventListener('focusin', this.show)
-    this.removeEventListener('focusout', this.hide)
-    document.removeEventListener('keydown', this.onKeydown)
-    clearTimeout(this.hideTimer)
+    this.removeEventListener('pointerdown', this.onPointerdown)
+    this.removeEventListener('pointerenter', this.onPointerenter)
+    this.removeEventListener('pointerleave', this.onPointerleave)
+    this.removeEventListener('focusin', this.onFocusin)
+    this.removeEventListener('focusout', this.onFocusout)
+    this.removeEventListener('click', this.onClick)
+    this.removeGlobalListeners()
+    this.clearTimers()
     this.stopPositioning()
   }
 
   show = () => {
-    clearTimeout(this.hideTimer)
+    this.clearTimers()
     this.open = true
   }
 
   hide = () => {
-    clearTimeout(this.hideTimer)
+    this.clearTimers()
+    this.pinned = false
     this.open = false
   }
 
-  private scheduleHide = () => {
+  private clearTimers() {
+    clearTimeout(this.showTimer)
     clearTimeout(this.hideTimer)
-    this.hideTimer = setTimeout(this.hide, HIDE_DELAY)
+  }
+
+  private hasTrigger(name: string) {
+    const triggers = this.trigger.split(/\s+/)
+    return !triggers.includes('manual') && triggers.includes(name)
+  }
+
+  // Delays only apply to hover. Focus and click respond right away, since
+  // a keyboard or touch user asked for the tooltip on purpose.
+  private scheduleShow() {
+    this.clearTimers()
+    const delay = nonNegative(this.showDelay, DEFAULT_SHOW_DELAY)
+    if (delay === 0) this.show()
+    else this.showTimer = setTimeout(this.show, delay)
+  }
+
+  private scheduleHide() {
+    this.clearTimers()
+    const delay = nonNegative(this.hideDelay, DEFAULT_HIDE_DELAY)
+    this.hideTimer = setTimeout(this.hide, delay)
+  }
+
+  private onPointerdown = (event: PointerEvent) => {
+    this.lastPointerType = event.pointerType
+  }
+
+  // Touch screens fire pointerenter on tap. That fake hover is ignored so
+  // only the click handler decides what a tap does.
+  private onPointerenter = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' || !this.hasTrigger('hover')) return
+    this.scheduleShow()
+  }
+
+  private onPointerleave = (event: PointerEvent) => {
+    if (event.pointerType === 'touch' || !this.hasTrigger('hover')) return
+    if (!this.pinned) this.scheduleHide()
+  }
+
+  private onFocusin = () => {
+    if (this.hasTrigger('focus')) this.show()
+  }
+
+  private onFocusout = (event: FocusEvent) => {
+    if (!this.hasTrigger('focus')) return
+
+    const next = event.relatedTarget as Node | null
+    if (next && this.contains(next)) return
+
+    // Clicking a non-focusable spot moves focus to nothing. A pinned
+    // tooltip stays open then; the outside click handler closes it.
+    if (this.pinned && !next) return
+    this.hide()
+  }
+
+  private onClick = (event: MouseEvent) => {
+    if (!this.hasTrigger('click')) return
+
+    // Clicks inside the tooltip itself don't toggle it.
+    const tooltip = this.renderRoot.querySelector('.tooltip')
+    if (tooltip && event.composedPath().includes(tooltip)) return
+
+    if (this.pinned) {
+      this.hide()
+      return
+    }
+
+    // On touch screens the first tap on a link shows the tooltip instead
+    // of navigating, otherwise it would never be seen. The second tap
+    // follows the link.
+    const link = event
+      .composedPath()
+      .find((el): el is HTMLAnchorElement => el instanceof HTMLAnchorElement)
+    if (this.lastPointerType === 'touch' && link?.href) {
+      event.preventDefault()
+    }
+
+    // An open tooltip (from hover or focus) gets pinned instead of
+    // closed, so clicking the trigger never makes it flicker.
+    this.pinned = true
+    this.show()
+  }
+
+  private onDocumentPointerdown = (event: PointerEvent) => {
+    if (!this.hasTrigger('click')) return
+    if (!event.composedPath().includes(this)) this.hide()
   }
 
   private onKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape') this.hide()
   }
 
+  private removeGlobalListeners() {
+    document.removeEventListener('keydown', this.onKeydown)
+    document.removeEventListener('pointerdown', this.onDocumentPointerdown)
+  }
+
   protected updated(changed: Map<string, unknown>) {
     if (changed.has('open')) {
-      // Only listen for Escape and track the position while visible.
+      // Global listeners and position tracking only run while visible.
       if (this.open) {
         document.addEventListener('keydown', this.onKeydown)
+        document.addEventListener('pointerdown', this.onDocumentPointerdown)
         this.startPositioning()
       } else {
-        document.removeEventListener('keydown', this.onKeydown)
+        this.removeGlobalListeners()
         this.stopPositioning()
       }
-    } else if (changed.has('placement') && this.open) {
+    } else if ((changed.has('placement') || changed.has('offset')) && this.open) {
       this.updatePosition()
     }
   }
@@ -197,7 +325,7 @@ export class CtgTooltip extends LitElement {
         strategy: 'fixed',
         placement: this.placement,
         middleware: [
-          offset(OFFSET),
+          offset(nonNegative(this.offset, DEFAULT_OFFSET)),
           flip({ padding: VIEWPORT_PADDING }),
           shift({ padding: VIEWPORT_PADDING }),
           arrow({ element: arrowEl, padding: 6 }),

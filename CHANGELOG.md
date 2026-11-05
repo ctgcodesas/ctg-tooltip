@@ -14,3 +14,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `placement` attribute to choose the preferred side of the tooltip.
 - The tooltip flips and shifts to stay inside the viewport.
 - Arrow pointing at the trigger.
+- `trigger` attribute (`hover`, `focus`, `click`, `manual`) so the tooltip also works on touch screens.
+- `show-delay`, `hide-delay` and `offset` attributes.
