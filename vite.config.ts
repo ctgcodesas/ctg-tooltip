@@ -8,7 +8,7 @@ export default defineConfig({
       fileName: 'ctg-tooltip',
     },
     rollupOptions: {
-      external: [/^lit/],
+      external: [/^lit/, /^@floating-ui\//],
     },
   },
 })

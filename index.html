@@ -13,15 +13,69 @@
         margin: 0;
         font-family: system-ui, sans-serif;
       }
+
+      .placements {
+        display: flex;
+        gap: 2rem;
+      }
+
+      .edge {
+        position: fixed;
+      }
+
+      .clipped {
+        overflow: hidden;
+        padding: 0.5rem;
+        border: 1px dashed #9ca3af;
+      }
     </style>
   </head>
   <body>
-    <p>
-      Made by
-      <ctg-tooltip>
-        <a href="https://ctgcode.com">CTG Code</a>
-        <span slot="content">Get a quote</span>
-      </ctg-tooltip>
-    </p>
+    <main>
+      <p>
+        Made by
+        <ctg-tooltip>
+          <a href="https://ctgcode.com">CTG Code</a>
+          <span slot="content">Get a quote</span>
+        </ctg-tooltip>
+      </p>
+
+      <div class="placements">
+        <ctg-tooltip placement="top">
+          <button>top</button>
+          <span slot="content">Top</span>
+        </ctg-tooltip>
+        <ctg-tooltip placement="right">
+          <button>right</button>
+          <span slot="content">Right</span>
+        </ctg-tooltip>
+        <ctg-tooltip placement="bottom">
+          <button>bottom</button>
+          <span slot="content">Bottom</span>
+        </ctg-tooltip>
+        <ctg-tooltip placement="left">
+          <button>left</button>
+          <span slot="content">Left</span>
+        </ctg-tooltip>
+      </div>
+
+      <p class="clipped">
+        Inside overflow: hidden
+        <ctg-tooltip>
+          <button>clipped?</button>
+          <span slot="content">Not clipped by the parent</span>
+        </ctg-tooltip>
+      </p>
+    </main>
+
+    <!-- Near the edges: should flip and shift to stay on screen. -->
+    <ctg-tooltip class="edge" id="edge-top" style="top: 0.5rem; left: 50%">
+      <button>flips to bottom</button>
+      <span slot="content">No room above, so I flipped</span>
+    </ctg-tooltip>
+    <ctg-tooltip class="edge" id="edge-right" style="bottom: 2rem; right: 0.5rem">
+      <button>shifts left</button>
+      <span slot="content">I would overflow the right edge, so I shifted</span>
+    </ctg-tooltip>
   </body>
 </html>
