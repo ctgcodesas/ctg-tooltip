@@ -7,8 +7,6 @@ A tooltip built as a Web Component, so it works the same in React, Vue, Angular,
 - Accessible: linked with `aria-describedby`, closes with `Escape`, respects reduced motion.
 - Themeable with CSS custom properties, no build step or config needed.
 
-> Work in progress, not published yet.
-
 ## Installation
 
 ```bash

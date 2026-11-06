@@ -1,6 +1,6 @@
 {
   "name": "@ctgcode/tooltip",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Tooltip Web Component that works in React, Vue, Angular, Astro or plain HTML.",
   "type": "module",
   "license": "MIT",
@@ -38,7 +38,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",

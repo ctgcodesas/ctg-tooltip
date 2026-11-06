@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-05
+
 ### Added
 
 - Show the tooltip on hover and keyboard focus, and hide it with `Escape`.
@@ -17,3 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `trigger` attribute (`hover`, `focus`, `click`, `manual`) so the tooltip also works on touch screens.
 - `show-delay`, `hide-delay` and `offset` attributes.
 - Theming through `--ctg-tooltip-*` CSS custom properties, plus `tooltip` and `arrow` CSS parts.
+
+[unreleased]: https://github.com/ctgcodesas/ctg-tooltip/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ctgcodesas/ctg-tooltip/releases/tag/v1.0.0
